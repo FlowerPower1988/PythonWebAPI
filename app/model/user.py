@@ -15,6 +15,10 @@ class UserValues(BaseModel):
     email: EmailStr
 
 class User(UserValues,DBBase,BaseModel):
+    def __init__(self, id, name, email):
+        self.id = id
+        self.name = name
+        self.email = email
     pass
 
 

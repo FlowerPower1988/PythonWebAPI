@@ -11,6 +11,7 @@ def create_user(user: UserValues, user_manager: IUserManager = Depends(get_user_
 
 @router.get("/users/{user_id}", response_model=User)
 def read_user(user_id: int, user_manager: IUserManager = Depends(get_user_manager)):
+    
     user = user_manager.read_user(user_id)
     
     if not user:

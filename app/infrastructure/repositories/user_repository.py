@@ -4,7 +4,7 @@ from ...model.user import User, UserValues
 
 users: list[User] = []
 
-class PostStaicRepository(IUserRepository):
+class UserStaicRepository(IUserRepository):
     def read_users(self):
         return users
 
