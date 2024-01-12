@@ -9,6 +9,9 @@ from app.infrastructure.repositories.product_mysql_repository import ProductMysq
 from app.abstraction.repositories.order_repository_interface import IOrderRepository
 from app.infrastructure.managers.order_manager import OrderManager
 from app.infrastructure.repositories.order_mysql_repository import OrderMysqlRepository
+from app.abstraction.repositories.order_product_repository_interface import IOrder_productRepository
+from app.infrastructure.managers.order_product_manager import Order_productManager
+from app.infrastructure.repositories.order_product_mysql_repository import Order_productMysqlRepository
 
 def get_user_repository():
     return UserMysqlRepository()
@@ -27,3 +30,9 @@ def get_order_repository():
 
 def get_order_manager(order_repository: IOrderRepository = Depends(get_order_repository)):
     return OrderManager(order_repository)
+
+def get_order_product_repository():
+    return Order_productMysqlRepository()
+
+def get_order_product_manager(order_product_repository: IOrder_productRepository = Depends(get_order_product_repository)):
+    return Order_productManager(order_product_repository)
