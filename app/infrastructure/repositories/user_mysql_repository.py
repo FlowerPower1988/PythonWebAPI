@@ -17,13 +17,19 @@ except Exception as e:
     
 class UserMysqlRepository(IUserRepository):
     def read_users(self):
-        mycursor.execute("SELECT * FROM users")
-        users = mycursor.fetchall()
-        user_list=[]
-        for user in users:
-            new_user = User(id=user[0], name=user[1], email=user[2])
-            user_list.append(new_user)
-        return user_list
+        try:
+            mycursor.execute("SELECT * FROM users")
+            users = mycursor.fetchall()
+            user_list=[]
+            for user in users:
+                new_user = User(id=user[0], name=user[1], email=user[2])
+                user_list.append(new_user)
+            return user_list
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def read_user(self, user_id: int):
         try:
@@ -44,19 +50,25 @@ class UserMysqlRepository(IUserRepository):
                 mydb.close()
     
     def create_user(self, new_user_values: UserValues):
-        sql = "INSERT INTO users(user_name, email) values(%s, %s)"
-        val = (new_user_values.name, new_user_values.email)
-        mycursor.execute(sql, val)
-        mydb.commit()
-        
-        mycursor.execute("SELECT LAST_INSERT_ID();")
-        last_id = mycursor.fetchone()
-        if last_id is not None and isinstance(last_id[0], int):
-            last_id_int : int = last_id[0]
-        mycursor.execute("SELECT * FROM users WHERE ID = %s", (last_id_int,))
-        user = mycursor.fetchone()
-        new_user = User(id=user[0], name=user[1], email=user[2]) if user is not None else None
-        return new_user
+        try:    
+            sql = "INSERT INTO users(user_name, email) values(%s, %s)"
+            val = (new_user_values.name, new_user_values.email)
+            mycursor.execute(sql, val)
+            mydb.commit()
+            
+            mycursor.execute("SELECT LAST_INSERT_ID();")
+            last_id = mycursor.fetchone()
+            if last_id is not None and isinstance(last_id[0], int):
+                last_id_int : int = last_id[0]
+            mycursor.execute("SELECT * FROM users WHERE ID = %s", (last_id_int,))
+            user = mycursor.fetchone()
+            new_user = User(id=user[0], name=user[1], email=user[2]) if user is not None else None
+            return new_user
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def delete_user(self, user_id: int):
         try:
@@ -76,6 +88,11 @@ class UserMysqlRepository(IUserRepository):
             return id_exist
         except:
             return None
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def update_user(self, user_to_be_updated_id: int ,new_values: UserValues):
         try:    
@@ -102,3 +119,8 @@ class UserMysqlRepository(IUserRepository):
             return new_user
         except:
             return None
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()

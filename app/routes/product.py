@@ -37,5 +37,6 @@ def delete_product(product_id: int, product_manager: IProductManager = Depends(g
     id_exist = product_manager.delete_product(product_id)
     if not id_exist:
         raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
-    
+    elif id_exist==409:
+        raise HTTPException(status_code=409, detail=f"Product with ID {product_id} has been ordered")
     return id_exist

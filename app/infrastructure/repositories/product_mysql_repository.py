@@ -17,13 +17,19 @@ except Exception as e:
     
 class ProductMysqlRepository(IProductRepository):
     def read_products(self):
-        mycursor.execute("SELECT * FROM products")
-        products = mycursor.fetchall()
-        product_list=[]
-        for product in products:
-            new_product = Product(id=product[0], name=product[1], price=product[2])
-            product_list.append(new_product)
-        return product_list
+        try:
+            mycursor.execute("SELECT * FROM products")
+            products = mycursor.fetchall()
+            product_list=[]
+            for product in products:
+                new_product = Product(id=product[0], name=product[1], price=product[2])
+                product_list.append(new_product)
+            return product_list
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def read_product(self, product_id: int):
         try:
@@ -44,19 +50,26 @@ class ProductMysqlRepository(IProductRepository):
                 mydb.close()
     
     def create_product(self, new_product_values: ProductValues):
-        sql = "INSERT INTO products(product_name, price) values(%s, %s)"
-        val = (new_product_values.name, new_product_values.price)
-        mycursor.execute(sql, val)
-        mydb.commit()
+        try:
+            sql = "INSERT INTO products(product_name, price) values(%s, %s)"
+            val = (new_product_values.name, new_product_values.price)
+            mycursor.execute(sql, val)
+            mydb.commit()
+            
+            mycursor.execute("SELECT LAST_INSERT_ID();")
+            last_id = mycursor.fetchone()
+            if last_id is not None and isinstance(last_id[0], int):
+                last_id_int : int = last_id[0]
+            mycursor.execute("SELECT * FROM products WHERE ID = %s", (last_id_int,))
+            product = mycursor.fetchone()
+            new_product = Product(id=product[0], name=product[1], price=product[2]) if product is not None else None
+            return new_product
         
-        mycursor.execute("SELECT LAST_INSERT_ID();")
-        last_id = mycursor.fetchone()
-        if last_id is not None and isinstance(last_id[0], int):
-            last_id_int : int = last_id[0]
-        mycursor.execute("SELECT * FROM products WHERE ID = %s", (last_id_int,))
-        product = mycursor.fetchone()
-        new_product = Product(id=product[0], name=product[1], price=product[2]) if product is not None else None
-        return new_product
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def delete_product(self, product_id: int):
         try:
@@ -70,12 +83,29 @@ class ProductMysqlRepository(IProductRepository):
             id_exist = bool(id_exist)
             if not id_exist:
                 return None
-            sql = ("DELETE FROM products WHERE ID = %s")
-            mycursor.execute(sql,val)
-            mydb.commit()
-            return id_exist
+            
+            sql2= ("SELECT EXISTS(SELECT 1 FROM orders_products WHERE product_id = %s)")
+            mycursor.execute(sql2, val)
+            result2 = mycursor.fetchone()
+            if result2 is None: #check if packed result is NONE, because unpacking NONE gives the error
+                return None
+            id_exist2, = result2 #unpacking the result, 
+            id_exist2 = bool(id_exist2)
+            if id_exist and not id_exist2:
+                sql = ("DELETE FROM products WHERE ID = %s")
+                mycursor.execute(sql,val)
+                mydb.commit()
+                return id_exist
+            elif id_exist and id_exist2:
+                id_exist=409
+                return id_exist
         except:
             return None
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def update_product(self, product_to_be_updated_id: int ,new_values: ProductValues):
         try:    
@@ -102,3 +132,8 @@ class ProductMysqlRepository(IProductRepository):
             return new_product
         except:
             return None
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()

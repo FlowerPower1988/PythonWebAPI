@@ -37,5 +37,6 @@ def delete_order(order_id: int, order_manager: IOrderManager = Depends(get_order
     id_exist = order_manager.delete_order(order_id)
     if not id_exist:
         raise HTTPException(status_code=404, detail=f"Order with ID {order_id} not found")
-    
+    elif id_exist==409:
+        raise HTTPException(status_code=409, detail=f"Order with ID {order_id} has ordered products")
     return id_exist

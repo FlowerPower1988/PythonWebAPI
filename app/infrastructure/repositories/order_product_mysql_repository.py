@@ -17,13 +17,19 @@ except Exception as e:
     
 class Order_productMysqlRepository(IOrder_productRepository):
     def read_orders_products(self):
-        mycursor.execute("SELECT * FROM orders_products")
-        orders_products = mycursor.fetchall()
-        orders_products_list=[]
-        for order_product in orders_products:
-            new_order_product = Order_product(order_id=order_product[0], product_id=order_product[1], amount=order_product[2])
-            orders_products_list.append(new_order_product)
-        return orders_products_list
+        try:
+            mycursor.execute("SELECT * FROM orders_products")
+            orders_products = mycursor.fetchall()
+            orders_products_list=[]
+            for order_product in orders_products:
+                new_order_product = Order_product(order_id=order_product[0], product_id=order_product[1], amount=order_product[2])
+                orders_products_list.append(new_order_product)
+            return orders_products_list
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def read_order_product(self, order_id: int):
         try:
@@ -45,12 +51,18 @@ class Order_productMysqlRepository(IOrder_productRepository):
                 mydb.close()
     
     def create_order_product(self, new_values: Order_productValues):
-        sql = ("INSERT INTO orders_products(order_id, product_id, amount) values(%s, %s, %s)")
-        val = (new_values.order_id, new_values.product_id, new_values.amount)
-        mycursor.execute(sql, val)
-        mydb.commit()
-        new_order_product = Order_product(order_id = new_values.order_id, product_id = new_values.product_id, amount = new_values.amount)
-        return new_order_product
+        try:
+            sql = ("INSERT INTO orders_products(order_id, product_id, amount) values(%s, %s, %s)")
+            val = (new_values.order_id, new_values.product_id, new_values.amount)
+            mycursor.execute(sql, val)
+            mydb.commit()
+            new_order_product = Order_product(order_id = new_values.order_id, product_id = new_values.product_id, amount = new_values.amount)
+            return new_order_product
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def delete_order_product(self, order_id: int, product_id: int):
         try:
@@ -70,6 +82,11 @@ class Order_productMysqlRepository(IOrder_productRepository):
             return id_exist
         except:
             return None
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
     
     def update_order_product(self, order_to_be_updated_id: int, product_to_be_updated_id: int, amount: int):
         try:    
@@ -96,3 +113,8 @@ class Order_productMysqlRepository(IOrder_productRepository):
             return new_order_product
         except:
             return None
+        finally:
+            if mycursor:
+                mycursor.close()
+            if mydb.is_connected():
+                mydb.close()
